@@ -139,11 +139,7 @@ export default function SignInScreen() {
               <Text style={{ color: '#e0533d' }} className="text-center text-xs font-medium">
                 {error}
               </Text>
-            ) : (
-              <Text className="text-muted text-center text-xs">
-                Test login — ID: alex · Passcode: 1234
-              </Text>
-            )}
+            ) : null}
           </View>
 
           {/* Divider */}

@@ -68,6 +68,7 @@ export function useVoiceRecognition(
 
   const start = useCallback(async () => {
     setTranscript('');
+    setError(null);
     finalRef.current = '';
     try {
       const perms = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
@@ -86,7 +87,11 @@ export function useVoiceRecognition(
   }, []);
 
   const stop = useCallback(() => {
-    ExpoSpeechRecognitionModule.stop();
+    try {
+      ExpoSpeechRecognitionModule.stop();
+    } catch {
+      setState('idle');
+    }
   }, []);
 
   const toggle = useCallback(() => {

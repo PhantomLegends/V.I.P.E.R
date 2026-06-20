@@ -2,6 +2,7 @@
 import '../global.css';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StatusBar } from 'expo-status-bar';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -135,6 +136,8 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HeroUINativeProvider>
+        {/* eslint-disable-next-line react/style-prop-object -- expo-status-bar style prop is a string union, not a style object */}
+        <StatusBar style="light" />
         <RootNavigator />
       </HeroUINativeProvider>
     </GestureHandlerRootView>

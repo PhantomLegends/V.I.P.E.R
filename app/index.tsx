@@ -12,7 +12,7 @@ import {
   User,
   Volume2,
 } from 'lucide-react-native';
-import { Input, Separator, Text, useThemeColor } from 'heroui-native';
+import { InputGroup, Separator, Text, useThemeColor } from 'heroui-native';
 import { router } from 'expo-router';
 
 import { ScreenContainer } from '@/components/ScreenContainer';
@@ -72,40 +72,40 @@ export default function SignInScreen() {
 
           {/* Form */}
           <View className="mt-8 gap-4">
-            <View className="w-full flex-row items-center">
-              <Input
+            <InputGroup>
+              <InputGroup.Prefix isDecorative>
+                <User color={muted} size={18} />
+              </InputGroup.Prefix>
+              <InputGroup.Input
                 value={id}
                 onChangeText={setId}
                 placeholder="Enter ID"
                 placeholderTextColor={fieldPlaceholder}
                 autoCapitalize="none"
-                className="flex-1 pl-11"
               />
-              <User color={muted} size={18} className="absolute left-4" pointerEvents="none" />
-            </View>
+            </InputGroup>
 
-            <View className="w-full flex-row items-center">
-              <Input
+            <InputGroup>
+              <InputGroup.Prefix isDecorative>
+                <Lock color={muted} size={18} />
+              </InputGroup.Prefix>
+              <InputGroup.Input
                 value={passcode}
                 onChangeText={setPasscode}
                 placeholder="Enter Passcode"
                 placeholderTextColor={fieldPlaceholder}
                 secureTextEntry={!showPasscode}
-                className="flex-1 px-11"
               />
-              <Lock color={muted} size={18} className="absolute left-4" pointerEvents="none" />
-              <Pressable
-                onPress={() => setShowPasscode((v) => !v)}
-                hitSlop={12}
-                className="absolute right-4"
-              >
-                {showPasscode ? (
-                  <EyeOff color={muted} size={18} />
-                ) : (
-                  <Eye color={muted} size={18} />
-                )}
-              </Pressable>
-            </View>
+              <InputGroup.Suffix>
+                <Pressable onPress={() => setShowPasscode((v) => !v)} hitSlop={12}>
+                  {showPasscode ? (
+                    <EyeOff color={muted} size={18} />
+                  ) : (
+                    <Eye color={muted} size={18} />
+                  )}
+                </Pressable>
+              </InputGroup.Suffix>
+            </InputGroup>
 
             <GradientButton
               label="SIGN IN"

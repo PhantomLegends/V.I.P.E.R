@@ -146,19 +146,6 @@ export default function AssistantScreen() {
               <SuggestionRow key={s.id} item={s} />
             ))}
           </View>
-
-          <Pressable
-            onPress={() => router.push('/face-id')}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-            className="mt-6"
-          >
-            <Text
-              style={{ color: TINT_HEX['text-viper-cyan'] }}
-              className="text-center text-sm font-medium"
-            >
-              Use Face Recognition instead
-            </Text>
-          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>

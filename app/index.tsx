@@ -19,6 +19,7 @@ import { ScreenContainer } from '@/components/ScreenContainer';
 import { GradientButton } from '@/components/GradientButton';
 import { Gradient } from '@/components/Gradient';
 import { useAuthStore } from '@/lib/authStore';
+import { useUserStore } from '@/lib/userStore';
 
 const statusItems = [
   { icon: Mic, label: 'Voice\nReady', tint: 'text-viper-blue' },
@@ -31,10 +32,24 @@ export default function SignInScreen() {
   const [id, setId] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPasscode, setShowPasscode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const signIn = useAuthStore((s) => s.signIn);
+  const verify = useUserStore((s) => s.verify);
 
   const handleCredentialsSignIn = () => {
-    signIn('credentials');
+    const result = verify(id, passcode);
+    if (!result.ok) {
+      const message =
+        result.reason === 'empty'
+          ? 'Enter your ID and passcode.'
+          : result.reason === 'unknown-id'
+            ? 'No account found with that ID.'
+            : 'Incorrect passcode. Try again.';
+      setError(message);
+      return;
+    }
+    setError(null);
+    signIn('credentials', result.user.name);
     router.replace('/(tabs)');
   };
 
@@ -78,7 +93,10 @@ export default function SignInScreen() {
               </InputGroup.Prefix>
               <InputGroup.Input
                 value={id}
-                onChangeText={setId}
+                onChangeText={(t) => {
+                  setId(t);
+                  if (error) setError(null);
+                }}
                 placeholder="Enter ID"
                 placeholderTextColor={fieldPlaceholder}
                 autoCapitalize="none"
@@ -91,7 +109,10 @@ export default function SignInScreen() {
               </InputGroup.Prefix>
               <InputGroup.Input
                 value={passcode}
-                onChangeText={setPasscode}
+                onChangeText={(t) => {
+                  setPasscode(t);
+                  if (error) setError(null);
+                }}
                 placeholder="Enter Passcode"
                 placeholderTextColor={fieldPlaceholder}
                 secureTextEntry={!showPasscode}
@@ -113,6 +134,16 @@ export default function SignInScreen() {
               className="mt-1"
               icon={<ArrowRight color="#ffffff" size={20} />}
             />
+
+            {error ? (
+              <Text style={{ color: '#e0533d' }} className="text-center text-xs font-medium">
+                {error}
+              </Text>
+            ) : (
+              <Text className="text-muted text-center text-xs">
+                Test login — ID: alex · Passcode: 1234
+              </Text>
+            )}
           </View>
 
           {/* Divider */}

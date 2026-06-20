@@ -25,6 +25,7 @@ import {
 
 import { initPostHog } from '@/lib/posthog';
 import { reportErrorToParent } from '@/lib/reportPreviewError';
+import { useUserStore } from '@/lib/userStore';
 
 /**
  * Custom ErrorBoundary that reports React render errors to the parent window (Bilt preview iframe)
@@ -121,6 +122,11 @@ export default function RootLayout() {
     if (Platform.OS === 'web') {
       initPostHog();
     }
+  }, []);
+
+  // Load locally stored VIPER accounts (seeds the test user on first run).
+  useEffect(() => {
+    void useUserStore.getState().hydrate();
   }, []);
 
   useEffect(() => {

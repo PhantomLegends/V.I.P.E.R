@@ -62,10 +62,11 @@ export default function ProfileScreen() {
 
   const handleSignOut = () => {
     signOut();
-    // Fully reset the navigation stack so we land on the sign-in screen, not a
-    // transient loading/blank state left behind by the tabs group.
-    if (router.canDismiss()) router.dismissAll();
+    // Land directly on the ID/passcode login screen (app/index.tsx). Replace the
+    // whole stack so the tabs group is fully unmounted with nothing behind it.
     router.replace('/');
+    // Drop any remaining screens (e.g. modals/tabs) left in history.
+    if (router.canDismiss()) router.dismissAll();
   };
 
   return (

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { ChevronRight, Settings } from 'lucide-react-native';
+import { AlertCircle, ChevronRight, Settings } from 'lucide-react-native';
 import { Surface, Text, useThemeColor } from 'heroui-native';
 import { router } from 'expo-router';
 
@@ -9,10 +9,11 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { VoiceOrb } from '@/components/VoiceOrb';
 import { suggestions, TINT_HEX } from '@/lib/assistantData';
 import { useActivityStore } from '@/lib/activityStore';
+import { useVoiceRecognition } from '@/lib/useVoiceRecognition';
 import type { AssistantState, Suggestion } from '@/lib/types';
 
 const STATE_LABEL: Record<AssistantState, string> = {
-  idle: 'Tap to start',
+  idle: 'Tap to speak',
   listening: 'Listening...',
   thinking: 'Thinking...',
   speaking: 'Speaking...',
@@ -58,15 +59,16 @@ function SuggestionRow({ item }: { item: Suggestion }) {
 
 export default function AssistantScreen() {
   const [foreground] = useThemeColor(['foreground']);
-  const [state, setState] = useState<AssistantState>('listening');
+  const logCommand = useActivityStore((s) => s.logCommand);
 
-  // Simulate a brief idle->listening cycle so the orb feels alive on open.
-  useEffect(() => {
-    const t = setTimeout(() => setState('listening'), 200);
-    return () => clearTimeout(t);
-  }, []);
+  const onFinalResult = useCallback(
+    (text: string) => {
+      logCommand(text, 'app');
+    },
+    [logCommand],
+  );
 
-  const toggle = () => setState((s) => (s === 'listening' ? 'idle' : 'listening'));
+  const { state, transcript, error, toggle } = useVoiceRecognition(onFinalResult);
 
   return (
     <ScreenContainer edges={['top']}>
@@ -85,6 +87,17 @@ export default function AssistantScreen() {
           <VoiceOrb state={state} onPress={toggle} size={104} />
           <Text className="text-foreground mt-4 text-xl font-semibold">{STATE_LABEL[state]}</Text>
           <ListeningDots active={state === 'listening'} />
+          {transcript.length > 0 ? (
+            <Text className="text-foreground mt-4 px-6 text-center text-base">
+              &ldquo;{transcript}&rdquo;
+            </Text>
+          ) : null}
+          {error ? (
+            <View className="border-danger/40 bg-danger/10 mt-4 flex-row items-center gap-2 rounded-2xl border px-4 py-2.5">
+              <AlertCircle color={TINT_HEX['text-danger']} size={16} />
+              <Text className="text-danger flex-1 text-sm">{error}</Text>
+            </View>
+          ) : null}
         </View>
 
         <Text className="text-muted mt-10 text-sm font-medium">You can try saying:</Text>

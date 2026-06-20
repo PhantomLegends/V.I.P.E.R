@@ -41,6 +41,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'expo-local-authentication',
         { faceIDPermission: 'Allow VIPER to use Face ID for secure sign-in.' },
       ],
+      [
+        'expo-speech-recognition',
+        {
+          microphonePermission: 'Allow $(PRODUCT_NAME) to use the microphone for voice commands.',
+          speechRecognitionPermission:
+            'Allow $(PRODUCT_NAME) to recognize your speech for voice commands.',
+        },
+      ],
       ...nativePlugins,
     ],
     experiments: {

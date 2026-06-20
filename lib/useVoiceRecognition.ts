@@ -1,5 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
-import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AssistantState } from './types';
 
 interface UseVoiceRecognitionResult {
@@ -11,6 +10,8 @@ interface UseVoiceRecognitionResult {
   error: string | null;
   /** Whether recognition is currently active. */
   recognizing: boolean;
+  /** Whether on-device speech recognition is available in this runtime. */
+  supported: boolean;
   /** Request permission (if needed) and begin listening. */
   start: () => Promise<void>;
   /** Stop listening and finalize the current result. */
@@ -19,9 +20,55 @@ interface UseVoiceRecognitionResult {
   toggle: () => void;
 }
 
+interface Subscription {
+  remove: () => void;
+}
+
+interface ResultEvent {
+  isFinal: boolean;
+  results: { transcript?: string }[];
+}
+
+interface ErrorEvent {
+  error: string;
+  message: string;
+}
+
+interface SpeechModule {
+  requestPermissionsAsync: () => Promise<{ granted: boolean }>;
+  start: (options: { lang: string; interimResults: boolean; continuous: boolean }) => void;
+  stop: () => void;
+  addListener: (
+    event: 'start' | 'end' | 'result' | 'error',
+    listener: (payload: never) => void,
+  ) => Subscription;
+}
+
 /**
- * Wraps expo-speech-recognition into a small state machine that the assistant
- * screen can render directly. Works on iOS, Android, and supported browsers.
+ * Lazily resolve the native module. expo-speech-recognition is a native module
+ * that is absent from Expo Go / the Bilt preview runtime, so importing it at the
+ * top level crashes the screen ("cannot find native module ExpoSpeechRecognition").
+ * Requiring it on demand inside a try/catch keeps the screen alive everywhere and
+ * lets us fall back to the text-command input when it is unavailable.
+ */
+interface SpeechPackage {
+  ExpoSpeechRecognitionModule?: SpeechModule;
+}
+
+function loadModule(): SpeechModule | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod: SpeechPackage = require('expo-speech-recognition');
+    return mod.ExpoSpeechRecognitionModule ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Wraps expo-speech-recognition into a small state machine for the assistant
+ * screen. On runtimes without the native module it reports `supported: false`
+ * so the UI can offer the text fallback instead of crashing.
  */
 export function useVoiceRecognition(
   onFinalResult?: (transcript: string) => void,
@@ -30,57 +77,74 @@ export function useVoiceRecognition(
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const recognizing = state === 'listening' || state === 'thinking';
+
+  const moduleRef = useRef<SpeechModule | null>(null);
+  const [supported, setSupported] = useState(false);
+  const subsRef = useRef<Subscription[]>([]);
   const finalRef = useRef('');
+  const onFinalRef = useRef(onFinalResult);
+  onFinalRef.current = onFinalResult;
 
-  useSpeechRecognitionEvent('start', () => {
-    setError(null);
-    setState('listening');
-  });
+  useEffect(() => {
+    const mod = loadModule();
+    moduleRef.current = mod;
+    setSupported(mod !== null);
+    if (!mod) return () => {};
 
-  useSpeechRecognitionEvent('end', () => {
-    setState('idle');
-    const final = finalRef.current.trim();
-    if (final.length > 0) {
-      onFinalResult?.(final);
-    }
-    finalRef.current = '';
-  });
+    const subs: Subscription[] = [
+      mod.addListener('start', () => {
+        setError(null);
+        setState('listening');
+      }),
+      mod.addListener('result', (event: ResultEvent) => {
+        const text = event.results[0]?.transcript ?? '';
+        setTranscript(text);
+        if (event.isFinal) {
+          finalRef.current = text;
+          setState('thinking');
+        }
+      }),
+      mod.addListener('error', (event: ErrorEvent) => {
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          setState('idle');
+          return;
+        }
+        setError(messageForError(event.error, event.message));
+        setState('idle');
+      }),
+      mod.addListener('end', () => {
+        setState('idle');
+        const final = finalRef.current.trim();
+        if (final.length > 0) {
+          onFinalRef.current?.(final);
+        }
+        finalRef.current = '';
+      }),
+    ];
+    subsRef.current = subs;
 
-  useSpeechRecognitionEvent('result', (event) => {
-    const result = event.results[0];
-    if (!result) return;
-    const text = result.transcript ?? '';
-    setTranscript(text);
-    if (event.isFinal) {
-      finalRef.current = text;
-      setState('thinking');
-    }
-  });
-
-  useSpeechRecognitionEvent('error', (event) => {
-    if (event.error === 'no-speech' || event.error === 'aborted') {
-      setState('idle');
-      return;
-    }
-    setError(messageForError(event.error, event.message));
-    setState('idle');
-  });
+    return () => {
+      for (const sub of subs) sub.remove();
+      subsRef.current = [];
+    };
+  }, []);
 
   const start = useCallback(async () => {
+    const mod = moduleRef.current;
+    if (!mod) {
+      setError('On-device voice is unavailable here. Type a command below instead.');
+      return;
+    }
     setTranscript('');
     setError(null);
     finalRef.current = '';
     try {
-      const perms = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      const perms = await mod.requestPermissionsAsync();
       if (!perms.granted) {
         setError('Microphone and speech access are needed to listen.');
         return;
       }
-      ExpoSpeechRecognitionModule.start({
-        lang: 'en-US',
-        interimResults: true,
-        continuous: false,
-      });
+      mod.start({ lang: 'en-US', interimResults: true, continuous: false });
     } catch {
       setError('Voice recognition is not available on this device.');
     }
@@ -88,7 +152,7 @@ export function useVoiceRecognition(
 
   const stop = useCallback(() => {
     try {
-      ExpoSpeechRecognitionModule.stop();
+      moduleRef.current?.stop();
     } catch {
       setState('idle');
     }
@@ -102,7 +166,7 @@ export function useVoiceRecognition(
     }
   }, [recognizing, start, stop]);
 
-  return { state, transcript, error, recognizing, start, stop, toggle };
+  return { state, transcript, error, recognizing, supported, start, stop, toggle };
 }
 
 function messageForError(code: string, message: string): string {

@@ -10,6 +10,8 @@ interface UseVoiceRecognitionResult {
   error: string | null;
   /** Whether recognition is currently active. */
   recognizing: boolean;
+  /** Whether speech recognition is available in this browser. */
+  supported: boolean;
   /** Request permission (if needed) and begin listening. */
   start: () => Promise<void>;
   /** Stop listening and finalize the current result. */
@@ -68,6 +70,7 @@ export function useVoiceRecognition(
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const recognizing = state === 'listening' || state === 'thinking';
+  const supported = getRecognitionCtor() !== null;
 
   const recognitionRef = useRef<WebSpeechRecognition | null>(null);
   const finalRef = useRef('');
@@ -157,7 +160,7 @@ export function useVoiceRecognition(
     }
   }, [recognizing, start, stop]);
 
-  return { state, transcript, error, recognizing, start, stop, toggle };
+  return { state, transcript, error, recognizing, supported, start, stop, toggle };
 }
 
 function messageForError(code: string, message?: string): string {

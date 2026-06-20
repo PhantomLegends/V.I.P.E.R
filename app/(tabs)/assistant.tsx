@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
-import { AlertCircle, ChevronRight, Settings } from 'lucide-react-native';
-import { Surface, Text, useThemeColor } from 'heroui-native';
+import { useCallback, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { AlertCircle, ChevronRight, Send, Settings } from 'lucide-react-native';
+import { InputGroup, Surface, Text, useThemeColor } from 'heroui-native';
 import { router } from 'expo-router';
 
 import { ScreenContainer } from '@/components/ScreenContainer';
@@ -58,8 +58,9 @@ function SuggestionRow({ item }: { item: Suggestion }) {
 }
 
 export default function AssistantScreen() {
-  const [foreground] = useThemeColor(['foreground']);
+  const [foreground, muted, accent] = useThemeColor(['foreground', 'muted', 'accent']);
   const logCommand = useActivityStore((s) => s.logCommand);
+  const [typed, setTyped] = useState('');
 
   const onFinalResult = useCallback(
     (text: string) => {
@@ -68,7 +69,14 @@ export default function AssistantScreen() {
     [logCommand],
   );
 
-  const { state, transcript, error, toggle } = useVoiceRecognition(onFinalResult);
+  const { state, transcript, error, supported, toggle } = useVoiceRecognition(onFinalResult);
+
+  const submitTyped = useCallback(() => {
+    const text = typed.trim();
+    if (text.length === 0) return;
+    logCommand(text, 'app');
+    setTyped('');
+  }, [typed, logCommand]);
 
   return (
     <ScreenContainer edges={['top']}>
@@ -82,44 +90,77 @@ export default function AssistantScreen() {
         }
       />
 
-      <ScrollView contentContainerClassName="px-5 pb-8" showsVerticalScrollIndicator={false}>
-        <View className="items-center pt-10">
-          <VoiceOrb state={state} onPress={toggle} size={104} />
-          <Text className="text-foreground mt-4 text-xl font-semibold">{STATE_LABEL[state]}</Text>
-          <ListeningDots active={state === 'listening'} />
-          {transcript.length > 0 ? (
-            <Text className="text-foreground mt-4 px-6 text-center text-base">
-              &ldquo;{transcript}&rdquo;
-            </Text>
-          ) : null}
-          {error ? (
-            <View className="border-danger/40 bg-danger/10 mt-4 flex-row items-center gap-2 rounded-2xl border px-4 py-2.5">
-              <AlertCircle color={TINT_HEX['text-danger']} size={16} />
-              <Text className="text-danger flex-1 text-sm">{error}</Text>
-            </View>
-          ) : null}
-        </View>
-
-        <Text className="text-muted mt-10 text-sm font-medium">You can try saying:</Text>
-        <View className="mt-3 gap-3">
-          {suggestions.map((s) => (
-            <SuggestionRow key={s.id} item={s} />
-          ))}
-        </View>
-
-        <Pressable
-          onPress={() => router.push('/face-id')}
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-          className="mt-6"
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerClassName="px-5 pb-8"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text
-            style={{ color: TINT_HEX['text-viper-cyan'] }}
-            className="text-center text-sm font-medium"
-          >
-            Use Face Recognition instead
+          <View className="items-center pt-10">
+            <VoiceOrb state={state} onPress={toggle} size={104} />
+            <Text className="text-foreground mt-4 text-xl font-semibold">{STATE_LABEL[state]}</Text>
+            <ListeningDots active={state === 'listening'} />
+            {transcript.length > 0 ? (
+              <Text className="text-foreground mt-4 px-6 text-center text-base">
+                &ldquo;{transcript}&rdquo;
+              </Text>
+            ) : null}
+            {error ? (
+              <View className="border-danger/40 bg-danger/10 mt-4 flex-row items-center gap-2 rounded-2xl border px-4 py-2.5">
+                <AlertCircle color={TINT_HEX['text-danger']} size={16} />
+                <Text className="text-danger flex-1 text-sm">{error}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Type-a-command fallback — works in every runtime, including when the
+              on-device speech module is unavailable in the preview / Expo Go. */}
+          <Text className="text-muted mt-10 text-sm font-medium">
+            {supported ? 'Or type a command:' : 'Type a command:'}
           </Text>
-        </Pressable>
-      </ScrollView>
+          <View className="mt-3">
+            <InputGroup>
+              <InputGroup.Input
+                value={typed}
+                onChangeText={setTyped}
+                placeholder="e.g. Open YouTube"
+                placeholderTextColorClassName="text-muted"
+                returnKeyType="send"
+                onSubmitEditing={submitTyped}
+                autoCapitalize="sentences"
+              />
+              <InputGroup.Suffix>
+                <Pressable onPress={submitTyped} hitSlop={12} disabled={typed.trim().length === 0}>
+                  <Send color={typed.trim().length === 0 ? muted : accent} size={18} />
+                </Pressable>
+              </InputGroup.Suffix>
+            </InputGroup>
+          </View>
+
+          <Text className="text-muted mt-8 text-sm font-medium">You can try saying:</Text>
+          <View className="mt-3 gap-3">
+            {suggestions.map((s) => (
+              <SuggestionRow key={s.id} item={s} />
+            ))}
+          </View>
+
+          <Pressable
+            onPress={() => router.push('/face-id')}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            className="mt-6"
+          >
+            <Text
+              style={{ color: TINT_HEX['text-viper-cyan'] }}
+              className="text-center text-sm font-medium"
+            >
+              Use Face Recognition instead
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }

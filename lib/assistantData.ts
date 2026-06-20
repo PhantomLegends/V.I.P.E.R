@@ -4,13 +4,13 @@ import {
   BookOpen,
   Briefcase,
   Calendar,
-  FileText,
   Mail,
   MessageCircle,
   Mic,
   Newspaper,
   ScanFace,
   ScreenShare,
+  Smartphone,
   StickyNote,
   Target,
   Volume2,
@@ -23,6 +23,7 @@ export const quickActions: QuickAction[] = [
     id: 'open-gmail',
     label: 'Open\nGmail',
     icon: Mail,
+    kind: 'email',
     tintClass: 'text-danger',
     spokenResponse: 'Opening Gmail for you.',
   },
@@ -30,6 +31,7 @@ export const quickActions: QuickAction[] = [
     id: 'study-mode',
     label: 'Study\nMode',
     icon: BookOpen,
+    kind: 'study',
     tintClass: 'text-viper-blue',
     spokenResponse: 'Study Mode activated. Notifications are now silenced.',
   },
@@ -37,6 +39,7 @@ export const quickActions: QuickAction[] = [
     id: 'read-screen',
     label: 'Read\nScreen',
     icon: ScreenShare,
+    kind: 'tts',
     tintClass: 'text-viper-cyan',
     spokenResponse: 'Reading the screen aloud.',
   },
@@ -44,6 +47,7 @@ export const quickActions: QuickAction[] = [
     id: 'take-notes',
     label: 'Take\nNotes',
     icon: StickyNote,
+    kind: 'notes',
     tintClass: 'text-viper-cyan',
     spokenResponse: 'Ready to take notes. Go ahead.',
   },
@@ -51,6 +55,7 @@ export const quickActions: QuickAction[] = [
     id: 'set-reminder',
     label: 'Set\nReminder',
     icon: Bell,
+    kind: 'reminder',
     tintClass: 'text-viper-violet',
     spokenResponse: 'What would you like me to remind you about?',
   },
@@ -58,6 +63,7 @@ export const quickActions: QuickAction[] = [
     id: 'focus-mode',
     label: 'Focus\nMode',
     icon: Target,
+    kind: 'focus',
     tintClass: 'text-viper-violet',
     spokenResponse: 'Focus Mode on. Stay in the zone.',
   },
@@ -65,6 +71,7 @@ export const quickActions: QuickAction[] = [
     id: 'work-mode',
     label: 'Work\nMode',
     icon: Briefcase,
+    kind: 'focus',
     tintClass: 'text-viper-blue',
     spokenResponse: 'Work Mode enabled. Productivity apps are ready.',
   },
@@ -72,6 +79,7 @@ export const quickActions: QuickAction[] = [
     id: 'open-youtube',
     label: 'Open\nYouTube',
     icon: Youtube,
+    kind: 'video',
     tintClass: 'text-danger',
     spokenResponse: 'Opening YouTube.',
   },
@@ -86,16 +94,57 @@ export const suggestions: Suggestion[] = [
 
 /** Icon + tint for each activity kind. */
 export const activityVisuals: Record<ActivityKind, { icon: typeof Mail; tintClass: string }> = {
-  app: { icon: Mail, tintClass: 'text-danger' },
+  email: { icon: Mail, tintClass: 'text-danger' },
+  video: { icon: Youtube, tintClass: 'text-danger' },
+  app: { icon: Smartphone, tintClass: 'text-viper-blue' },
   study: { icon: BookOpen, tintClass: 'text-viper-blue' },
   calendar: { icon: Calendar, tintClass: 'text-viper-cyan' },
   social: { icon: MessageCircle, tintClass: 'text-viper-violet' },
-  notes: { icon: FileText, tintClass: 'text-warning' },
+  notes: { icon: StickyNote, tintClass: 'text-warning' },
   news: { icon: Newspaper, tintClass: 'text-viper-cyan' },
   reminder: { icon: Bell, tintClass: 'text-viper-violet' },
   focus: { icon: Target, tintClass: 'text-viper-violet' },
   tts: { icon: Volume2, tintClass: 'text-viper-cyan' },
 };
+
+/**
+ * Classify a free-form command (typed, spoken, or a suggestion) into the most
+ * fitting activity kind so the activity feed shows the right icon. Order matters:
+ * the most specific keywords are checked first.
+ */
+export function classifyCommand(text: string): ActivityKind {
+  const t = text.toLowerCase();
+
+  const has = (...words: string[]) => words.some((w) => t.includes(w));
+
+  if (has('gmail', 'email', 'inbox', 'mail')) return 'email';
+  if (has('youtube', 'video', 'watch', 'play ')) return 'video';
+  if (has('remind', 'reminder', 'alarm', 'timer', 'wake me')) return 'reminder';
+  if (has('schedule', 'calendar', 'meeting', 'appointment', 'event', 'agenda')) return 'calendar';
+  if (has('note', 'write down', 'jot', 'memo')) return 'notes';
+  if (has('news', 'headline', 'article', 'briefing')) return 'news';
+  if (has('study', 'learn', 'homework', 'revise', 'flashcard')) return 'study';
+  if (has('focus', 'work mode', 'concentrate', 'deep work')) return 'focus';
+  if (has('read', 'speak', 'say ', 'text-to-speech', 'tts', 'aloud')) return 'tts';
+  if (
+    has(
+      'message',
+      'text ',
+      'whatsapp',
+      'chat',
+      'call',
+      'instagram',
+      'twitter',
+      'tweet',
+      'snapchat',
+      'social',
+    )
+  ) {
+    return 'social';
+  }
+
+  return 'app';
+}
 
 /** Hex equivalents of the accent tint classes, for icon `color` props. */
 export const TINT_HEX: Record<string, string> = {

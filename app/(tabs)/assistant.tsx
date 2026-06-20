@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { VoiceOrb } from '@/components/VoiceOrb';
-import { suggestions, TINT_HEX } from '@/lib/assistantData';
+import { classifyCommand, suggestions, TINT_HEX } from '@/lib/assistantData';
 import { useActivityStore } from '@/lib/activityStore';
 import { useVoiceRecognition } from '@/lib/useVoiceRecognition';
 import type { AssistantState, Suggestion } from '@/lib/types';
@@ -42,7 +42,7 @@ function SuggestionRow({ item }: { item: Suggestion }) {
 
   return (
     <Pressable
-      onPress={() => logCommand(item.text, 'app')}
+      onPress={() => logCommand(item.text, classifyCommand(item.text))}
       style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
     >
       <Surface
@@ -64,7 +64,7 @@ export default function AssistantScreen() {
 
   const onFinalResult = useCallback(
     (text: string) => {
-      logCommand(text, 'app');
+      logCommand(text, classifyCommand(text));
     },
     [logCommand],
   );
@@ -74,7 +74,7 @@ export default function AssistantScreen() {
   const submitTyped = useCallback(() => {
     const text = typed.trim();
     if (text.length === 0) return;
-    logCommand(text, 'app');
+    logCommand(text, classifyCommand(text));
     setTyped('');
   }, [typed, logCommand]);
 

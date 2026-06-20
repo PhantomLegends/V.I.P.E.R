@@ -20,7 +20,7 @@ function QuickActionCard({ action }: { action: QuickAction }) {
 
   return (
     <Pressable
-      onPress={() => logCommand(action.label.replace('\n', ' '), 'app')}
+      onPress={() => logCommand(action.label.replace('\n', ' '), action.kind)}
       style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
       className="flex-1"
     >

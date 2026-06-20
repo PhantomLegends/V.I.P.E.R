@@ -14,11 +14,14 @@ import type { ActivityEntry, ActivityKind } from '@/lib/types';
 
 const FILTERS: { id: 'all' | ActivityKind; label: string }[] = [
   { id: 'all', label: 'All' },
+  { id: 'email', label: 'Email' },
+  { id: 'video', label: 'Video' },
   { id: 'app', label: 'Apps' },
   { id: 'study', label: 'Study' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'social', label: 'Social' },
   { id: 'notes', label: 'Notes' },
+  { id: 'reminder', label: 'Reminders' },
   { id: 'news', label: 'News' },
 ];
 

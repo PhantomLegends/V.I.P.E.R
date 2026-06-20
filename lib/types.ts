@@ -15,6 +15,8 @@ export interface QuickAction {
   id: QuickActionId;
   label: string;
   icon: LucideIcon;
+  /** Activity kind logged when this action runs, so the feed shows a matching icon. */
+  kind: ActivityKind;
   /** Tailwind accent class for the icon tint, mapped via accent-* utilities. */
   tintClass: string;
   spokenResponse: string;
@@ -22,6 +24,8 @@ export interface QuickAction {
 
 /** Source/category for an executed command, used to pick an icon + color. */
 export type ActivityKind =
+  | 'email'
+  | 'video'
   | 'app'
   | 'study'
   | 'calendar'

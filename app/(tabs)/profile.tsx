@@ -62,6 +62,9 @@ export default function ProfileScreen() {
 
   const handleSignOut = () => {
     signOut();
+    // Fully reset the navigation stack so we land on the sign-in screen, not a
+    // transient loading/blank state left behind by the tabs group.
+    if (router.canDismiss()) router.dismissAll();
     router.replace('/');
   };
 

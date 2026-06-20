@@ -48,11 +48,11 @@ export interface Suggestion {
 
 export interface DailyStats {
   tasks: number;
-  tasksDelta: number;
+  tasksDelta?: number;
   timeSavedMinutes: number;
-  timeSavedDelta: number;
+  timeSavedDelta?: number;
   commands: number;
-  commandsDelta: number;
+  commandsDelta?: number;
 }
 
 export type AssistantState = 'idle' | 'listening' | 'thinking' | 'speaking';

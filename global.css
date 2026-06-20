@@ -6,160 +6,103 @@
 @import 'heroui-native/styles';
 
 /*
- * HeroUI Native + Uniwind tokens
- *
- * Component variants compile to Tailwind utilities (e.g. Button primary → bg-accent,
- * Button secondary → bg-default, Alert → text-foreground). Those classes only work when
- * the matching Tailwind color tokens exist.
- *
- * heroui-native/styles/theme.css maps semantic tokens to --color-* utilities.
- * Uncomment the HeroUI default theme block below to override.
- *
- * Docs: https://docs.uniwind.dev/theming/global-css
- *       https://heroui.com/docs/native/getting-started/colors
+ * VIPER — AI Assistant. Dark, futuristic theme.
+ * Deep space-navy backgrounds, electric blue accent, violet gradient highlights.
  */
 
-/*
 @layer base {
-  HeroUI Default Theme
   :root {
-    color-scheme: light;
+    color-scheme: dark;
 
-    == Common Variables ==
-
-    Primitive Colors (Do not change between light and dark)
+    /* Primitive Colors */
     --white: oklch(100% 0 0);
     --black: oklch(0% 0 0);
-    --snow: oklch(0.9911 0 0);
-    --eclipse: oklch(0.2103 0.0059 285.89);
+    --snow: oklch(0.98 0.005 250);
+    --eclipse: oklch(0.21 0.0059 285.89);
 
-    Spacing scale
+    /* Spacing scale */
     --spacing: 0.25rem;
 
-    Border
+    /* Border */
     --border-width: 1px;
-    --field-border-width: 0px;
+    --field-border-width: 1px;
     --disabled-opacity: 0.5;
 
-    Ring offset - Used for focus ring
+    /* Ring offset */
     --ring-offset-width: 2px;
 
-    Cursor
+    /* Cursor */
     --cursor-interactive: pointer;
     --cursor-disabled: not-allowed;
 
-    Radius
-    --radius: 0.5rem;
-    --field-radius: calc(var(--radius) * 1.5);
+    /* Radius */
+    --radius: 0.875rem;
+    --field-radius: calc(var(--radius) * 1);
 
-    == Light Theme Variables ==
-
-    Base Colors
-    --background: oklch(0.9702 0 0);
-    --foreground: var(--eclipse);
-
-    Surface
-    --surface: var(--white);
-    --surface-foreground: var(--foreground);
-
-    Overlay
-    --overlay: var(--white);
-    --overlay-foreground: var(--foreground);
-
-    --muted: oklch(0.5517 0.0138 285.94);
-    --scrollbar: oklch(87.1% 0.006 286.286);
-
-    --default: oklch(94% 0.001 286.375);
-    --default-foreground: var(--eclipse);
-
-    --accent: oklch(0.6204 0.195 253.83);
-    --accent-foreground: var(--snow);
-
-    Form Field Defaults - Colors
-    --field-background: var(--white);
-    --field-foreground: oklch(0.2103 0.0059 285.89);
-    --field-placeholder: var(--muted);
-    --field-border: transparent;
-
-    Status Colors
-    --success: oklch(0.7329 0.1935 150.81);
-    --success-foreground: var(--eclipse);
-
-    --warning: oklch(0.7819 0.1585 72.33);
-    --warning-foreground: var(--eclipse);
-
-    --danger: oklch(0.6532 0.2328 25.74);
-    --danger-foreground: var(--snow);
-
-    Component Colors
-    --segment: var(--white);
-    --segment-foreground: var(--eclipse);
-
-    Misc Colors
-    --border: oklch(92% 0.004 286.32);
-    --separator: oklch(92% 0.004 286.32);
-    --focus: var(--accent);
-    --link: var(--foreground);
-
-    Backdrop
-    --backdrop: rgba(0, 0, 0, 0.5);
-
-    Shadows
-    --surface-shadow:
-      0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
-      0 0 1px 0 rgba(0, 0, 0, 0.06);
-    --overlay-shadow: 0 4px 16px 0 rgba(24, 24, 27, 0.08), 0 8px 24px 0 rgba(24, 24, 27, 0.09);
-    --field-shadow:
-      0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
-      0 0 1px 0 rgba(0, 0, 0, 0.06);
-    --skeleton-animation: shimmer;
-  }
-
-  .dark,
-  [data-theme="dark"] {
-    color-scheme: dark;
-    == Dark Theme Variables ==
-
-    Base Colors
-    --background: oklch(12% 0.005 285.823);
+    /* Base Colors — deep space navy */
+    --background: oklch(0.16 0.025 264);
     --foreground: var(--snow);
 
-    --surface: oklch(0.2103 0.0059 285.89);
+    /* Surface — slightly lighter navy panels */
+    --surface: oklch(0.21 0.03 264);
     --surface-foreground: var(--foreground);
 
-    --overlay: oklch(0.22 0.0059 285.89);
+    /* Overlay */
+    --overlay: oklch(0.2 0.03 264);
     --overlay-foreground: var(--foreground);
 
-    --muted: oklch(70.5% 0.015 286.067);
-    --scrollbar: oklch(70.5% 0.015 286.067);
+    --muted: oklch(0.68 0.02 264);
+    --scrollbar: oklch(0.4 0.02 264);
 
-    --default: oklch(27.4% 0.006 286.033);
+    --default: oklch(0.27 0.03 264);
     --default-foreground: var(--snow);
 
-    --field-background: var(--default);
-    --field-foreground: var(--foreground);
+    /* Accent — electric blue */
+    --accent: oklch(0.65 0.2 258);
+    --accent-foreground: var(--snow);
 
-    --warning: oklch(0.8203 0.1388 76.34);
+    /* Form Field Defaults */
+    --field-background: oklch(0.22 0.03 264);
+    --field-foreground: var(--snow);
+    --field-placeholder: oklch(0.6 0.02 264);
+    --field-border: oklch(0.32 0.04 264);
+
+    /* Status Colors */
+    --success: oklch(0.75 0.18 150);
+    --success-foreground: var(--eclipse);
+
+    --warning: oklch(0.8 0.15 76);
     --warning-foreground: var(--eclipse);
 
-    --danger: oklch(0.594 0.1967 24.63);
+    --danger: oklch(0.62 0.21 25);
     --danger-foreground: var(--snow);
 
-    --segment: oklch(0.3964 0.01 285.93);
+    /* Component Colors */
+    --segment: oklch(0.24 0.03 264);
     --segment-foreground: var(--foreground);
 
-    --border: oklch(22% 0.006 286.033);
-    --separator: oklch(22% 0.006 286.033);
+    /* Misc Colors */
+    --border: oklch(0.3 0.035 264);
+    --separator: oklch(0.28 0.03 264);
     --focus: var(--accent);
-    --link: var(--foreground);
+    --link: var(--accent);
 
-    --backdrop: rgba(0, 0, 0, 0.6);
+    /* Backdrop */
+    --backdrop: rgba(3, 6, 20, 0.7);
 
+    /* Shadows (subtle on dark) */
     --surface-shadow: 0 0 0 0 transparent inset;
-    --overlay-shadow: 0 0 0 0 transparent inset;
+    --overlay-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.4);
     --field-shadow: 0 0 0 0 transparent inset;
+    --skeleton-animation: shimmer;
+
+    /* VIPER custom brand tokens */
+    --color-viper-blue: oklch(0.65 0.2 258);
+    --color-viper-violet: oklch(0.6 0.22 295);
+    --color-viper-cyan: oklch(0.78 0.13 215);
+    --color-viper-panel: oklch(0.21 0.03 264);
+    --color-viper-panel-deep: oklch(0.18 0.028 264);
   }
 }
-*/
 
 @source './node_modules/heroui-native/lib';

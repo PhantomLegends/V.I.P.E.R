@@ -13,7 +13,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import { useEffect } from 'react';
 import * as DevClient from 'expo-dev-client';
-import { HeroUINativeProvider } from 'heroui-native';
+import { HeroUINativeProvider, useThemeColor } from 'heroui-native';
 import { Uniwind } from 'uniwind';
 import {
   ErrorBoundary as ExpoErrorBoundary,
@@ -41,8 +41,8 @@ function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
 export { ErrorBoundary };
 
-// Starter is light-only by default. Remove this when implementing requested dark mode.
-Uniwind.setTheme('light');
+// VIPER uses a dark, futuristic theme throughout.
+Uniwind.setTheme('dark');
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -135,10 +135,27 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HeroUINativeProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ title: 'Habits', headerShown: false }} />
-        </Stack>
+        <RootNavigator />
       </HeroUINativeProvider>
     </GestureHandlerRootView>
+  );
+}
+
+function RootNavigator() {
+  const [background] = useThemeColor(['background']);
+
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: background } }}>
+      <Stack.Screen name="index" options={{ title: 'VIPER' }} />
+      <Stack.Screen
+        name="face-id"
+        options={{
+          title: 'Face Recognition',
+          presentation: 'modal',
+          contentStyle: { backgroundColor: background },
+        }}
+      />
+      <Stack.Screen name="(tabs)" options={{ title: 'VIPER' }} />
+    </Stack>
   );
 }

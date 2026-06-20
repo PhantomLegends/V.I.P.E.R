@@ -53,12 +53,19 @@ function Bar({
 }
 
 /** Decorative audio waveform shown beside the home tap-to-speak orb. */
-export function Waveform({ active = false }: { active?: boolean }) {
+export function Waveform({
+  active = false,
+  mirrored = false,
+}: {
+  active?: boolean;
+  mirrored?: boolean;
+}) {
   const [accent] = useThemeColor(['accent']);
+  const bars = mirrored ? [...BARS].toReversed() : BARS;
 
   return (
     <View className="h-12 flex-row items-center gap-1">
-      {BARS.map((bar) => (
+      {bars.map((bar) => (
         <Bar
           key={bar.id}
           baseHeight={bar.height}

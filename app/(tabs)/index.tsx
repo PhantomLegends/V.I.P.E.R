@@ -78,9 +78,13 @@ export default function HomeScreen() {
           className="border-border/60 mt-5 items-center rounded-3xl border py-6"
         >
           <View className="h-24 flex-row items-center justify-center gap-4">
-            <Waveform active={voiceState === 'listening'} />
+            <View className="flex-1 items-end overflow-hidden">
+              <Waveform active={voiceState === 'listening'} />
+            </View>
             <VoiceOrb state={voiceState} onPress={handleOrbPress} size={72} />
-            <Waveform active={voiceState === 'listening'} />
+            <View className="flex-1 items-start overflow-hidden">
+              <Waveform active={voiceState === 'listening'} mirrored />
+            </View>
           </View>
           <Text className="text-foreground mt-2 text-base font-semibold">Tap to speak</Text>
           <Text className="text-muted text-xs">or say “Hey VIPER”</Text>

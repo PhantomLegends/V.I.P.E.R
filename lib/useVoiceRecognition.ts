@@ -42,6 +42,8 @@ interface SpeechModule {
     event: 'start' | 'end' | 'result' | 'error',
     listener: (payload: never) => void,
   ) => Subscription;
+  /** Present from v2+. Returns false when the OS speech engine is unavailable. */
+  isRecognitionAvailable?: () => boolean;
 }
 
 /**
@@ -86,52 +88,95 @@ export function useVoiceRecognition(
   onFinalRef.current = onFinalResult;
 
   useEffect(() => {
-    const mod = loadModule();
+    // On mount we ONLY probe availability — a cheap read that does not wire up
+    // any native event emitters. Listener registration is deferred to start()
+    // so that merely opening the screen never crashes on devices where the
+    // speech engine is missing or misconfigured.
+    let mod: SpeechModule | null = null;
+    try {
+      mod = loadModule();
+      if (
+        mod &&
+        typeof mod.isRecognitionAvailable === 'function' &&
+        !mod.isRecognitionAvailable()
+      ) {
+        mod = null;
+      }
+    } catch {
+      mod = null;
+    }
+
     moduleRef.current = mod;
     setSupported(mod !== null);
-    if (!mod) return () => {};
-
-    const subs: Subscription[] = [
-      mod.addListener('start', () => {
-        setError(null);
-        setState('listening');
-      }),
-      mod.addListener('result', (event: ResultEvent) => {
-        const text = event.results[0]?.transcript ?? '';
-        setTranscript(text);
-        if (event.isFinal) {
-          finalRef.current = text;
-          setState('thinking');
-        }
-      }),
-      mod.addListener('error', (event: ErrorEvent) => {
-        if (event.error === 'no-speech' || event.error === 'aborted') {
-          setState('idle');
-          return;
-        }
-        setError(messageForError(event.error, event.message));
-        setState('idle');
-      }),
-      mod.addListener('end', () => {
-        setState('idle');
-        const final = finalRef.current.trim();
-        if (final.length > 0) {
-          onFinalRef.current?.(final);
-        }
-        finalRef.current = '';
-      }),
-    ];
-    subsRef.current = subs;
 
     return () => {
-      for (const sub of subs) sub.remove();
+      for (const sub of subsRef.current) {
+        try {
+          sub.remove();
+        } catch {
+          /* ignore */
+        }
+      }
       subsRef.current = [];
     };
+  }, []);
+
+  /** Register native event listeners on demand. Returns false if it failed. */
+  const registerListeners = useCallback((mod: SpeechModule): boolean => {
+    if (subsRef.current.length > 0) return true;
+    try {
+      subsRef.current = [
+        mod.addListener('start', () => {
+          setError(null);
+          setState('listening');
+        }),
+        mod.addListener('result', (event: ResultEvent) => {
+          const text = event.results[0]?.transcript ?? '';
+          setTranscript(text);
+          if (event.isFinal) {
+            finalRef.current = text;
+            setState('thinking');
+          }
+        }),
+        mod.addListener('error', (event: ErrorEvent) => {
+          if (event.error === 'no-speech' || event.error === 'aborted') {
+            setState('idle');
+            return;
+          }
+          setError(messageForError(event.error, event.message));
+          setState('idle');
+        }),
+        mod.addListener('end', () => {
+          setState('idle');
+          const final = finalRef.current.trim();
+          if (final.length > 0) {
+            onFinalRef.current?.(final);
+          }
+          finalRef.current = '';
+        }),
+      ];
+      return true;
+    } catch {
+      for (const sub of subsRef.current) {
+        try {
+          sub.remove();
+        } catch {
+          /* ignore */
+        }
+      }
+      subsRef.current = [];
+      return false;
+    }
   }, []);
 
   const start = useCallback(async () => {
     const mod = moduleRef.current;
     if (!mod) {
+      setError('On-device voice is unavailable here. Type a command below instead.');
+      return;
+    }
+    if (!registerListeners(mod)) {
+      setSupported(false);
       setError('On-device voice is unavailable here. Type a command below instead.');
       return;
     }
@@ -148,7 +193,7 @@ export function useVoiceRecognition(
     } catch {
       setError('Voice recognition is not available on this device.');
     }
-  }, []);
+  }, [registerListeners]);
 
   const stop = useCallback(() => {
     try {

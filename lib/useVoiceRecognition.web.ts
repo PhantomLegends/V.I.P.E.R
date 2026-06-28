@@ -74,6 +74,7 @@ export function useVoiceRecognition(
 
   const recognitionRef = useRef<WebSpeechRecognition | null>(null);
   const finalRef = useRef('');
+  const retriedRef = useRef(false);
   const onFinalRef = useRef(onFinalResult);
   onFinalRef.current = onFinalResult;
 
@@ -84,11 +85,7 @@ export function useVoiceRecognition(
     };
   }, []);
 
-  const start = useCallback(async () => {
-    setTranscript('');
-    setError(null);
-    finalRef.current = '';
-
+  const begin = useCallback((isRetry: boolean) => {
     const Ctor = getRecognitionCtor();
     if (!Ctor) {
       setError('Voice recognition is not supported in this browser. Try it on a device build.');
@@ -125,6 +122,15 @@ export function useVoiceRecognition(
         setState('idle');
         return;
       }
+      // The browser engine streams audio to a remote service and occasionally
+      // reports a transient `network` error even when it would otherwise work.
+      // Silently retry once before surfacing anything to the user.
+      if (event.error === 'network' && !retriedRef.current) {
+        retriedRef.current = true;
+        recognitionRef.current = null;
+        setTimeout(() => begin(true), 350);
+        return;
+      }
       setError(messageForError(event.error, event.message));
       setState('idle');
     });
@@ -143,10 +149,20 @@ export function useVoiceRecognition(
     try {
       recognition.start();
     } catch {
-      setError('Could not start voice recognition. Try again.');
+      if (!isRetry) {
+        setError('Could not start voice recognition. Try again.');
+      }
       setState('idle');
     }
   }, []);
+
+  const start = useCallback(async () => {
+    setTranscript('');
+    setError(null);
+    finalRef.current = '';
+    retriedRef.current = false;
+    begin(false);
+  }, [begin]);
 
   const stop = useCallback(() => {
     recognitionRef.current?.stop();
@@ -169,7 +185,7 @@ function messageForError(code: string, message?: string): string {
     case 'service-not-allowed':
       return 'Microphone access was denied. Enable it in your browser to use voice.';
     case 'network':
-      return 'Voice needs a network connection the preview blocks. Try a device build, or type a command.';
+      return 'Voice had trouble connecting. Tap the mic to try again, or type a command.';
     case 'language-not-supported':
       return 'That language is not supported for voice in this browser.';
     case 'audio-capture':

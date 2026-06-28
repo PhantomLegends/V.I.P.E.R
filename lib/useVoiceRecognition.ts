@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { AssistantState } from './types';
+
+/**
+ * Expo Go ships a fixed set of native modules and cannot load custom ones like
+ * expo-speech-recognition. Detecting it lets the UI explain that on-device voice
+ * needs a dev/TestFlight build instead of surfacing a confusing failure.
+ */
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+const UNAVAILABLE_MESSAGE = isExpoGo
+  ? 'On-device voice needs a dev or TestFlight build — Expo Go can\u2019t load it. Type a command below instead.'
+  : 'On-device voice is unavailable here. Type a command below instead.';
 
 interface UseVoiceRecognitionResult {
   /** Drives the orb animation + status label. */
@@ -110,6 +122,9 @@ export function useVoiceRecognition(
 
     moduleRef.current = mod;
     setSupported(mod !== null);
+    if (mod === null && isExpoGo) {
+      setError(UNAVAILABLE_MESSAGE);
+    }
 
     return () => {
       for (const sub of subsRef.current) {
@@ -174,12 +189,12 @@ export function useVoiceRecognition(
   const start = useCallback(async () => {
     const mod = moduleRef.current;
     if (!mod) {
-      setError('On-device voice is unavailable here. Type a command below instead.');
+      setError(UNAVAILABLE_MESSAGE);
       return;
     }
     if (!registerListeners(mod)) {
       setSupported(false);
-      setError('On-device voice is unavailable here. Type a command below instead.');
+      setError(UNAVAILABLE_MESSAGE);
       return;
     }
     // Re-probe right before starting: the engine can be present yet unavailable
@@ -189,12 +204,12 @@ export function useVoiceRecognition(
     try {
       if (typeof mod.isRecognitionAvailable === 'function' && !mod.isRecognitionAvailable()) {
         setSupported(false);
-        setError('On-device voice is unavailable here. Type a command below instead.');
+        setError(UNAVAILABLE_MESSAGE);
         return;
       }
     } catch {
       setSupported(false);
-      setError('On-device voice is unavailable here. Type a command below instead.');
+      setError(UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -211,7 +226,7 @@ export function useVoiceRecognition(
     } catch {
       // start() threw on-device — degrade to the text input rather than crash.
       setSupported(false);
-      setError('On-device voice is unavailable here. Type a command below instead.');
+      setError(UNAVAILABLE_MESSAGE);
     }
   }, [registerListeners]);
 

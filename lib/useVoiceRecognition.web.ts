@@ -169,7 +169,7 @@ function messageForError(code: string, message?: string): string {
     case 'service-not-allowed':
       return 'Microphone access was denied. Enable it in your browser to use voice.';
     case 'network':
-      return 'Network error. Check your connection and try again.';
+      return 'Voice needs a network connection the preview blocks. Try a device build, or type a command.';
     case 'language-not-supported':
       return 'That language is not supported for voice in this browser.';
     case 'audio-capture':

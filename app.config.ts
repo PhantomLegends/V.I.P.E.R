@@ -47,6 +47,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           microphonePermission: 'Allow $(PRODUCT_NAME) to use the microphone for voice commands.',
           speechRecognitionPermission:
             'Allow $(PRODUCT_NAME) to recognize your speech for voice commands.',
+          androidSpeechServicePackages: ['com.google.android.googlequicksearchbox'],
         },
       ],
       ...nativePlugins,

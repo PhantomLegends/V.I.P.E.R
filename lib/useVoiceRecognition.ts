@@ -36,6 +36,8 @@ interface ErrorEvent {
 
 interface SpeechModule {
   requestPermissionsAsync: () => Promise<{ granted: boolean }>;
+  /** iOS: mic-only permission. Per docs this avoids the network speech-recognizer auth path. */
+  requestMicrophonePermissionsAsync?: () => Promise<{ granted: boolean }>;
   start: (options: { lang: string; interimResults: boolean; continuous: boolean }) => void;
   stop: () => void;
   addListener: (
@@ -180,18 +182,36 @@ export function useVoiceRecognition(
       setError('On-device voice is unavailable here. Type a command below instead.');
       return;
     }
+    // Re-probe right before starting: the engine can be present yet unavailable
+    // on a device (e.g. Siri/Dictation disabled, no speech service installed).
+    // Per the library docs, calling start() in that state crashes/hangs, so we
+    // bail out to the text fallback instead.
+    try {
+      if (typeof mod.isRecognitionAvailable === 'function' && !mod.isRecognitionAvailable()) {
+        setSupported(false);
+        setError('On-device voice is unavailable here. Type a command below instead.');
+        return;
+      }
+    } catch {
+      setSupported(false);
+      setError('On-device voice is unavailable here. Type a command below instead.');
+      return;
+    }
+
     setTranscript('');
     setError(null);
     finalRef.current = '';
     try {
-      const perms = await mod.requestPermissionsAsync();
-      if (!perms.granted) {
+      const granted = await requestPermission(mod);
+      if (!granted) {
         setError('Microphone and speech access are needed to listen.');
         return;
       }
       mod.start({ lang: 'en-US', interimResults: true, continuous: false });
     } catch {
-      setError('Voice recognition is not available on this device.');
+      // start() threw on-device — degrade to the text input rather than crash.
+      setSupported(false);
+      setError('On-device voice is unavailable here. Type a command below instead.');
     }
   }, [registerListeners]);
 
@@ -212,6 +232,26 @@ export function useVoiceRecognition(
   }, [recognizing, start, stop]);
 
   return { state, transcript, error, recognizing, supported, start, stop, toggle };
+}
+
+/**
+ * Request the lightest permission set that still lets recognition run. Per the
+ * library docs, the combined requestPermissionsAsync() also asks for the iOS
+ * network speech-recognizer authorization, which is the documented source of
+ * "permitted in Settings but still fails" issues. We try mic-only first when
+ * that API is available and fall back to the combined request otherwise.
+ */
+async function requestPermission(mod: SpeechModule): Promise<boolean> {
+  if (typeof mod.requestMicrophonePermissionsAsync === 'function') {
+    try {
+      const mic = await mod.requestMicrophonePermissionsAsync();
+      if (mic.granted) return true;
+    } catch {
+      /* fall through to combined request */
+    }
+  }
+  const perms = await mod.requestPermissionsAsync();
+  return perms.granted;
 }
 
 function messageForError(code: string, message: string): string {
